@@ -1,7 +1,8 @@
-from fastapi import FastAPI  , Query , status , HTTPException , Path , Form  
+from fastapi import FastAPI  , Query , status , HTTPException , Path , Form  , Body , UploadFile , File
 from fastapi.responses import JSONResponse
 from typing import Annotated
 import random
+from typing import List
 
 
 app=FastAPI()
@@ -32,7 +33,7 @@ def get_name_by_id(name_id:int = Path(title="object id")):
 
 
 @app.post("/names",status_code=status.HTTP_201_CREATED)
-def creat_name(name : str = Form()):
+def creat_name(name : str = Body(embed=True)):
     name_obj={"id":random.randint(6,100),"name":name}
     names.append(name_obj)
     return name_obj
@@ -63,3 +64,19 @@ def root():
 @app.post("/submit")
 def submit_form(username :str = Form(... , alias="username"), password:str=Form(... , alias="password")):
     return {"username": username, "password": password}
+
+
+@app.post("/uploadfile")
+async def upload_file(file : UploadFile = File(...)):
+    content = await file.read()
+    print(file.__dict__)
+    return {"filename" : file.filename , "content_type":file.content_type , "file_size": len(content)}
+
+
+@app.post("/UploadMultipleFiles")
+async def upload_multiple(files: List[UploadFile] = File(description="Select files to upload")):
+    
+    return [
+        {"filename": file.filename, "content_type": file.content_type} 
+        for file in files
+    ]
