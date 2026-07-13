@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import Annotated
 import random
 from typing import List
-
+from schemas import PersonCreateSchema , PersonResponseSchema
 
 app=FastAPI()
 
@@ -17,14 +17,14 @@ names=[
 ]
 
 
-@app.get("/names")
+@app.get("/names" , response_model=list[PersonResponseSchema])
 def get_names(q : str | None = Query(alias="search",default=None , max_length=50)):
     if q :
         return JSONResponse(content=[item for item in names if item['name'] == q ])
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="object not found")
 
 
-@app.get("/names/{name_id}")
+@app.get("/names/{name_id}",response_model=PersonResponseSchema)
 def get_name_by_id(name_id:int = Path(title="object id")):
     for name in names:
         if name['id'] == name_id:
@@ -39,7 +39,7 @@ def creat_name(name : str = Body(embed=True)):
     return name_obj
 
 
-@app.put("/names/{name_id}")
+@app.put("/names/{name_id}" )
 def update_name(name_id:int = Path(),name:str=Query()):
     for item in names:
         if item['id']==name_id:
@@ -80,3 +80,10 @@ async def upload_multiple(files: List[UploadFile] = File(description="Select fil
         {"filename": file.filename, "content_type": file.content_type} 
         for file in files
     ]
+
+
+@app.post("/namesSchema",status_code=status.HTTP_201_CREATED,response_model=PersonResponseSchema)
+def creat_name(person : PersonCreateSchema):
+    name_obj={"id":random.randint(6,100),"name":person.name}
+    names.append(name_obj)
+    return name_obj
