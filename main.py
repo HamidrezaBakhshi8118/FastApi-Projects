@@ -3,9 +3,10 @@ from fastapi.responses import JSONResponse
 from typing import Annotated
 import random
 from typing import List
-from schemas import PersonCreateSchema , PersonResponseSchema
+from schemas import PersonCreateSchema , PersonResponseSchema , User
 
 app=FastAPI()
+
 
 
 names=[
@@ -87,3 +88,7 @@ def creat_name(person : PersonCreateSchema):
     name_obj={"id":random.randint(6,100),"name":person.name}
     names.append(name_obj)
     return name_obj
+
+@app.post("/GetUser")
+def create_user(user :User = Form(...)):
+    return user.model_dump_json(indent=2)

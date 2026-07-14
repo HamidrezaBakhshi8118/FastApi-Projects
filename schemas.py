@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel ,EmailStr
 
 
 class PersonCreateSchema(BaseModel):
@@ -10,4 +10,13 @@ class PersonResponseSchema(BaseModel):
     name : str
 
 class PersonUpdateSchema(BaseModel):
-    name : str
+    name : str 
+
+
+
+class User(BaseModel):
+    name: str
+    email:EmailStr
+    account_id : int
+
+    
