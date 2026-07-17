@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine , Column , Integer , String , UUID , BOOLEAN ,DateTime
+from sqlalchemy import create_engine , Column , Integer , String , BOOLEAN ,DateTime
 from sqlalchemy.orm import sessionmaker , declarative_base 
 
 
