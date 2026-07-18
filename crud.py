@@ -48,6 +48,11 @@ session=SessionLocal()
 #result = session.query(User).join(User.addresses).where(User.first_name == "ali").all()
 #print(result)
 
+#with relations
+#users = session.query(User).join(User.addresses).where(Addres.city == "tehran").all()
+#print(users)
 
-users = session.query(User).join(User.addresses).where(Addres.city == "tehran").all()
-print(users)
+result = session.query(User).join(Addres , User.id==Addres.user_id).where(Addres.city.like("tehran")).all()
+print(result)
+
+
