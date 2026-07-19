@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine , Column , Integer , String , BOOLEAN ,DateTime , ForeignKey
 from sqlalchemy.orm import sessionmaker , declarative_base , relationship
-
+from datetime import datetime
 
 DATABASE_URL="postgresql://postgres:147852@localhost:5432/fastapi_course"
 
@@ -21,9 +21,9 @@ class User(Base):
     last_name=Column(String(length=30) , nullable=True)
     age = Column(Integer , nullable=True)
     is_active= Column(BOOLEAN,default=True)
-    joined_at = Column(DateTime)
+    joined_at = Column(DateTime , default=datetime.now)
 
-    addresses = relationship("Addres", back_populates="user")
+    #addresses = relationship("Addres", back_populates="user")
 
 
     def __repr__(self):
@@ -38,9 +38,11 @@ class Addres(Base):
     state = Column(String)
     zip_code = Column(String)
 
-    user = relationship("User", back_populates="addresses")
+    #user = relationship("User", back_populates="addresses")
 
     def __repr__(self):
         return f"Addres(id={self.id}, city='{self.city}', state='{self.state}', zip_code='{self.zip_code}')"
 
 Base.metadata.create_all(engine)
+
+

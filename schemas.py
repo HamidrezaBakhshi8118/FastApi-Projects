@@ -1,4 +1,4 @@
-from pydantic import BaseModel ,EmailStr
+from pydantic import BaseModel ,EmailStr , Field
 
 
 class PersonCreateSchema(BaseModel):
@@ -6,8 +6,9 @@ class PersonCreateSchema(BaseModel):
 
 
 class PersonResponseSchema(BaseModel):
-    id : int
-    name : str
+    id: int
+    first_name: str
+    last_name: str
 
 class PersonUpdateSchema(BaseModel):
     name : str 
@@ -19,4 +20,8 @@ class User(BaseModel):
     email:EmailStr
     account_id : int
 
-    
+
+class CreatUser(BaseModel):
+    first_name : str = Field(... , min_length=3)
+    last_name : str = Field(... , min_length=5)
+    age : int =Field(...)
