@@ -1,4 +1,4 @@
-from pydantic import BaseModel ,EmailStr , Field
+from pydantic import BaseModel , Field
 
 
 class PersonCreateSchema(BaseModel):
@@ -14,11 +14,6 @@ class PersonUpdateSchema(BaseModel):
     name : str 
 
 
-
-class User(BaseModel):
-    name: str
-    email:EmailStr
-    account_id : int
 
 
 class CreatUser(BaseModel):
@@ -36,3 +31,8 @@ class AccountCreatRequest(BaseModel):
 
     def __repr__(self):
         return f"first_name : {self.first_name} , last_name : {self.last_name} , age : {self.age} , username : {self.username} , pass : {self.password}"
+    
+
+class Login(BaseModel):
+    username : str 
+    password : str
