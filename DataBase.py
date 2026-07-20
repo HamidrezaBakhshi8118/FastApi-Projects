@@ -22,6 +22,8 @@ class User(Base):
     age = Column(Integer , nullable=True)
     is_active= Column(BOOLEAN,default=True)
     joined_at = Column(DateTime , default=datetime.now)
+    username = Column(String , nullable=True , unique=True , index=True)
+    password = Column(String , nullable=True)
 
     #addresses = relationship("Addres", back_populates="user")
 
