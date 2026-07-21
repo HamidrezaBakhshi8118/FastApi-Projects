@@ -6,8 +6,15 @@ from typing import List
 from schemas import PersonCreateSchema , PersonResponseSchema , CreatUser , AccountCreatRequest , Login
 from DataBase import User , Addres , SessionLocal
 from sqlalchemy.orm import Session
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.security import HTTPBasic, APIKeyQuery , HTTPBearer
 import bcrypt
+from datetime import datetime ,timedelta
+import jwt
+import secrets
+
+API_KEY ="qwertyuiop"
+SECRET_KEY = secrets.token_hex(32)
+print(SECRET_KEY)
 
 
 def get_db():
@@ -31,6 +38,22 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode('utf-8'),hashed_password.encode('utf-8'))
+
+def api_key_auth(api_key: str):
+    if api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return api_key
+
+
+def generate_access_token(user_id : int , expiers_in : int = 3600) -> str :
+
+    now = datetime.now()
+    payload ={
+        "user_id" : user_id,
+        "iat":now,
+        "exp":now + timedelta(seconds=expiers_in)
+    }
+    return jwt.encode(payload=payload , key=SECRET_KEY , algorithm="HS256")
 
 
 @app.get("/names" , response_model=list[PersonResponseSchema])
@@ -72,15 +95,22 @@ def creat_account(account : AccountCreatRequest = Form() , db : Session = Depend
     return account
 
 
-@app.post("/login")
+@app.post(path="/login")
 def login_user(user : Login = Form() , db : Session = Depends(get_db)):
     
     user_request : User = db.query(User).where(user.username == User.username).first()
     if user_request : 
         check_password = verify_password(user.password , user_request.password)
         if check_password:
-            return JSONResponse(content={"message":"Login was succssecful"},status_code=status.HTTP_202_ACCEPTED)
+            access_token = generate_access_token(user_request.id)
+            return JSONResponse(content={"message":"Login was succssecful" , "access_token":access_token },status_code=status.HTTP_202_ACCEPTED)
         
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="wrong password")
         
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="you do not have any accounts")   
+
+
+@app.get("/private_data")
+def get_secure_data(api_key : str =Depends(api_key_auth)):
+    return JSONResponse(content={"message":"logged in "})
+
