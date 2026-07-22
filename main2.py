@@ -51,7 +51,8 @@ def generate_access_token(user_id : int , expiers_in : int = 3600) -> str :
     payload ={
         "user_id" : user_id,
         "iat":now,
-        "exp":now + timedelta(seconds=expiers_in)
+        "exp":now + timedelta(seconds=expiers_in),
+        "token_type": "access"
     }
     return jwt.encode(payload=payload , key=SECRET_KEY , algorithm="HS256")
 
