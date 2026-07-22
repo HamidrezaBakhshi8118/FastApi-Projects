@@ -6,16 +6,18 @@ from typing import List
 from schemas import PersonCreateSchema , PersonResponseSchema , CreatUser , AccountCreatRequest , Login
 from DataBase import User , Addres , SessionLocal
 from sqlalchemy.orm import Session
-from fastapi.security import HTTPBasic, APIKeyQuery , HTTPBearer
+from fastapi.security import HTTPBasic, HTTPAuthorizationCredentials , HTTPBearer
 import bcrypt
 from datetime import datetime ,timedelta
 import jwt
+from jwt.exceptions import InvalidSignatureError
 import secrets
 
 API_KEY ="qwertyuiop"
 SECRET_KEY = secrets.token_hex(32)
 print(SECRET_KEY)
 
+security = HTTPBearer()
 
 def get_db():
     db = SessionLocal()
@@ -55,6 +57,26 @@ def generate_access_token(user_id : int , expiers_in : int = 3600) -> str :
         "token_type": "access"
     }
     return jwt.encode(payload=payload , key=SECRET_KEY , algorithm="HS256")
+
+
+
+def get_authenticated_user(credentials : HTTPAuthorizationCredentials =Depends(security) , db : Session = Depends(get_db)):
+    token = credentials.credentials
+    try:
+        deoded=jwt.decode(jwt=token , key=SECRET_KEY , algorithms="HS256")
+        user_id = deoded.get("user_id")
+        
+        
+        if not user_id :
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED , detail="user is not in payload")
+        
+        user_obj=db.query(User).where(user_id==User.id).first()
+        return user_obj
+    
+    except InvalidSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED , detail="invalid")
+
+
 
 
 @app.get("/names" , response_model=list[PersonResponseSchema])
