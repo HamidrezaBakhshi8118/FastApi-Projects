@@ -3,18 +3,19 @@ from fastapi.responses import JSONResponse
 from typing import Annotated
 import random
 from typing import List
-from schemas import PersonCreateSchema , PersonResponseSchema , CreatUser , AccountCreatRequest , Login
+from schemas import PersonCreateSchema , PersonResponseSchema , CreatUser , AccountCreatRequest , Login , GetAuthenticatedUser
 from DataBase import User , Addres , SessionLocal
 from sqlalchemy.orm import Session
 from fastapi.security import HTTPBasic, HTTPAuthorizationCredentials , HTTPBearer
 import bcrypt
-from datetime import datetime ,timedelta
+from datetime import datetime ,timedelta , timezone
 import jwt
 from jwt.exceptions import InvalidSignatureError
 import secrets
 
 API_KEY ="qwertyuiop"
 SECRET_KEY = secrets.token_hex(32)
+
 print(SECRET_KEY)
 
 security = HTTPBearer()
@@ -27,7 +28,7 @@ def get_db():
         db.close()
 
 app=FastAPI()
-security = HTTPBasic()
+
 
 def hash_password(password: str) -> str:
 
@@ -49,7 +50,7 @@ def api_key_auth(api_key: str):
 
 def generate_access_token(user_id : int , expiers_in : int = 3600) -> str :
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     payload ={
         "user_id" : user_id,
         "iat":now,
@@ -60,21 +61,27 @@ def generate_access_token(user_id : int , expiers_in : int = 3600) -> str :
 
 
 
-def get_authenticated_user(credentials : HTTPAuthorizationCredentials =Depends(security) , db : Session = Depends(get_db)):
+def get_authenticated_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
     try:
-        deoded=jwt.decode(jwt=token , key=SECRET_KEY , algorithms="HS256")
-        user_id = deoded.get("user_id")
+        decoded = jwt.decode(jwt=token, key=SECRET_KEY, algorithms=["HS256"])
+        user_id = decoded.get("user_id")
         
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User ID not found in token")
         
-        if not user_id :
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED , detail="user is not in payload")
-        
-        user_obj=db.query(User).where(user_id==User.id).first()
+        user_obj = db.query(User).where(User.id == user_id).first()
+        if not user_obj:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+            
         return user_obj
-    
-    except InvalidSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED , detail="invalid")
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token signature")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 
 
@@ -137,3 +144,7 @@ def login_user(user : Login = Form() , db : Session = Depends(get_db)):
 def get_secure_data(api_key : str =Depends(api_key_auth)):
     return JSONResponse(content={"message":"logged in "})
 
+
+@app.get("/me" , response_model=GetAuthenticatedUser)
+def read_user_token(current_user :User  = Depends(get_authenticated_user)):
+    return current_user

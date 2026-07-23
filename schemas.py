@@ -36,3 +36,11 @@ class AccountCreatRequest(BaseModel):
 class Login(BaseModel):
     username : str 
     password : str
+
+
+class GetAuthenticatedUser(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    username: str
+    age: int  
