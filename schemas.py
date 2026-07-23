@@ -44,3 +44,8 @@ class GetAuthenticatedUser(BaseModel):
     last_name: str
     username: str
     age: int  
+
+    model_config ={
+        "from_attributes" : True
+    }
+        
