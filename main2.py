@@ -1,4 +1,4 @@
-from fastapi import FastAPI  , Query , status , HTTPException , Path , Form  , Body , UploadFile , File , Depends 
+from fastapi import FastAPI  , Query , status , HTTPException , Path , Form  , Body , UploadFile , File , Depends , Response , Request
 from fastapi.responses import JSONResponse 
 from typing import Annotated
 import random
@@ -148,3 +148,35 @@ def get_secure_data(api_key : str =Depends(api_key_auth)):
 @app.get("/me" , response_model=GetAuthenticatedUser)
 def read_user_token(current_user :User  = Depends(get_authenticated_user)):
     return current_user
+
+
+@app.post("/login-and-set-cookie")
+def login_user_and_set_cookie(response : Response  , user : Login = Form() , db :Session = Depends(get_db)):
+    user_request : User = db.query(User).where(user.username == User.username).first()
+    if user_request : 
+        check_password = verify_password(user.password , user_request.password)
+        if check_password:
+            access_token = generate_access_token(user_request.id)
+            response.set_cookie(key="access_token",value=access_token , httponly=True , samesite="lax" ,max_age=30)
+            response.status_code = status.HTTP_202_ACCEPTED
+            return {"message":"Login was succssecful" , "access_token":access_token }
+
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="wrong password")
+    
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="you do not have any accounts")
+
+
+    
+@app.get("/get-authenticated-user" , response_model=GetAuthenticatedUser)
+def get_user(request : Request  , db : Session=Depends(get_db)):
+    token=request.cookies.get("access_token")
+    if not token:
+        return JSONResponse(content={"message":"no valid token"},status_code=status.HTTP_400_BAD_REQUEST)
+    
+    decoded = jwt.decode(jwt=token, key=SECRET_KEY, algorithms=["HS256"])
+    user_id=decoded.get("user_id")
+    user_obj : User = db.query(User).where(User.id==user_id).first()
+    if user_obj:
+        return user_obj
+    
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST , detail="you do not have any accounts")
